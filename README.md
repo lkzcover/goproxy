@@ -1,2 +1,2 @@
 # goproxy
-heroku workaround personal proxy project
+workaround personal proxy project
