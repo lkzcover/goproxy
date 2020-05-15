@@ -31,11 +31,12 @@ func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	var encryptMode bool
+	var key string
 	encryptModeReq := req.FormValue("encrypt")
 	if len(encryptModeReq) != 0 {
 		encryptMode = true
 
-		key := os.Getenv("KEY")
+		key = os.Getenv("KEY")
 		if len(key) == 0 {
 			log.Println("Warning: KEY environment parameter not set")
 			resp.WriteHeader(http.StatusMethodNotAllowed)
@@ -51,6 +52,15 @@ func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	case "GET":
 		{
 			if encryptMode {
+				target, err := decryptData(proxyURLReq, key)
+				if err != nil {
+					log.Printf("Error: encrypt target for GET request: %s, error: %s", proxyURLReq, err)
+					resp.WriteHeader(http.StatusInternalServerError)
+
+					return
+				}
+
+				proxyURLReq = string(target)
 
 			}
 
@@ -68,27 +78,44 @@ func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 			var reqBody []byte
 			var err error
 
+			reqBody, err = ioutil.ReadAll(req.Body)
+			if err != nil {
+				log.Printf("Error: request: %s read body error: %s", proxyURLReq, err)
+				resp.WriteHeader(http.StatusBadRequest)
+
+				return
+			}
+
 			if encryptMode {
-
-			} else {
-				reqBody, err = ioutil.ReadAll(req.Body)
+				target, err := decryptData(proxyURLReq, key)
 				if err != nil {
-					log.Printf("Error: request: %s read body error: %s", proxyURLReq, err)
-					resp.WriteHeader(http.StatusBadRequest)
-
-					return
-				}
-
-				bodyReader := bytes.NewReader(reqBody)
-				contentType := req.Header.Get("Content-Type")
-
-				proxyResp, err = http.Post(proxyURLReq, contentType, bodyReader)
-				if err != nil {
-					log.Printf("Error: POST request: %s error: %s", proxyURLReq, err)
+					log.Printf("Error: encrypt target for POST request: %s, error: %s", proxyURLReq, err)
 					resp.WriteHeader(http.StatusInternalServerError)
 
 					return
 				}
+
+				proxyURLReq = string(target)
+
+				reqBody, err = decryptData(string(reqBody), key)
+				if err != nil {
+					log.Printf("Error: encrypt body for POST request: %s, error: %s", proxyURLReq, err)
+					resp.WriteHeader(http.StatusInternalServerError)
+
+					return
+				}
+
+			}
+
+			bodyReader := bytes.NewReader(reqBody)
+			contentType := req.Header.Get("Content-Type")
+
+			proxyResp, err = http.Post(proxyURLReq, contentType, bodyReader)
+			if err != nil {
+				log.Printf("Error: POST request: %s error: %s", proxyURLReq, err)
+				resp.WriteHeader(http.StatusInternalServerError)
+
+				return
 			}
 
 		}
