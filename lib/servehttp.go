@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/lkzcover/easyaes"
 )
 
 type HTTPServer struct {
@@ -32,7 +34,7 @@ func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 
 	var encryptMode bool
 	var key string
-	encryptModeReq := req.FormValue("encrypt")
+	encryptModeReq := req.FormValue("type")
 	if len(encryptModeReq) != 0 {
 		encryptMode = true
 
@@ -40,11 +42,13 @@ func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		if len(key) == 0 {
 			log.Println("Warning: KEY environment parameter not set")
 			resp.WriteHeader(http.StatusMethodNotAllowed)
+
+			return
 		}
 
 	}
 
-	var proxyRespBody []byte
+	var proxyRespBody, target, iv []byte
 	var proxyResp *http.Response
 	var err error
 
@@ -52,7 +56,7 @@ func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	case "GET":
 		{
 			if encryptMode {
-				target, err := decryptData(proxyURLReq, key)
+				target, iv, err = decryptData(proxyURLReq, key)
 				if err != nil {
 					log.Printf("Error: encrypt target for GET request: %s, error: %s", proxyURLReq, err)
 					resp.WriteHeader(http.StatusInternalServerError)
@@ -87,7 +91,7 @@ func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 			}
 
 			if encryptMode {
-				target, err := decryptData(proxyURLReq, key)
+				target, iv, err = decryptData(proxyURLReq, key)
 				if err != nil {
 					log.Printf("Error: encrypt target for POST request: %s, error: %s", proxyURLReq, err)
 					resp.WriteHeader(http.StatusInternalServerError)
@@ -97,7 +101,7 @@ func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 
 				proxyURLReq = string(target)
 
-				reqBody, err = decryptData(string(reqBody), key)
+				reqBody, _, err = decryptData(string(reqBody), key)
 				if err != nil {
 					log.Printf("Error: encrypt body for POST request: %s, error: %s", proxyURLReq, err)
 					resp.WriteHeader(http.StatusInternalServerError)
@@ -135,6 +139,16 @@ func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(http.StatusInternalServerError)
 
 		return
+	}
+
+	if encryptMode {
+		proxyRespBody, err = easyaes.EncryptAesCBCStaticIV([]byte(key), iv, proxyRespBody)
+		if err != nil {
+			log.Printf("Error: request: %s responce encrypt error: %s", proxyURLReq, err)
+			resp.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
 	}
 
 	resp.WriteHeader(http.StatusOK)
