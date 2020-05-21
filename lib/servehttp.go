@@ -56,7 +56,7 @@ func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	case "GET":
 		{
 			if encryptMode {
-				target, iv, err = decryptData(proxyURLReq, key)
+				target, iv, err = decryptURLData(proxyURLReq, key)
 				if err != nil {
 					log.Printf("Error: encrypt target for GET request: %s, error: %s", proxyURLReq, err)
 					resp.WriteHeader(http.StatusInternalServerError)
@@ -91,7 +91,7 @@ func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 			}
 
 			if encryptMode {
-				target, iv, err = decryptData(proxyURLReq, key)
+				target, iv, err = decryptURLData(proxyURLReq, key)
 				if err != nil {
 					log.Printf("Error: encrypt target for POST request: %s, error: %s", proxyURLReq, err)
 					resp.WriteHeader(http.StatusInternalServerError)
@@ -101,7 +101,7 @@ func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 
 				proxyURLReq = string(target)
 
-				reqBody, _, err = decryptData(string(reqBody), key)
+				reqBody, err = decryptBodyData(key, iv, reqBody)
 				if err != nil {
 					log.Printf("Error: encrypt body for POST request: %s, error: %s", proxyURLReq, err)
 					resp.WriteHeader(http.StatusInternalServerError)

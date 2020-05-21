@@ -70,3 +70,5 @@ func TestEncryptedRequest(t *testing.T) {
 
 	log.Println(string(decryptResp))
 }
+
+// TODO написать тест POST зароса

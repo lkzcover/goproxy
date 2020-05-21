@@ -6,7 +6,7 @@ import (
 	"github.com/lkzcover/easyaes"
 )
 
-func decryptData(data, key string) ([]byte, []byte, error) {
+func decryptURLData(data, key string) ([]byte, []byte, error) {
 
 	rawData, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
@@ -18,5 +18,17 @@ func decryptData(data, key string) ([]byte, []byte, error) {
 
 	decrypt, err := easyaes.DecryptAesCBCStaticIV([]byte(key), iv, targetEncryptedData)
 	return decrypt, iv, err
+
+}
+
+func decryptBodyData(key string, iv, data []byte) ([]byte, error) {
+
+	rawData, err := base64.StdEncoding.DecodeString(string(data))
+	if err != nil {
+		return nil, err
+	}
+
+	decrypt, err := easyaes.DecryptAesCBCStaticIV([]byte(key), iv, rawData)
+	return decrypt, err
 
 }
