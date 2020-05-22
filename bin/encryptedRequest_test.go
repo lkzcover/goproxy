@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"testing"
 
 	"github.com/lkzcover/easyaes"
@@ -47,7 +46,7 @@ func TestEncryptedRequest(t *testing.T) {
 	splitByte.WriteString(iv)
 	splitByte.Write(target)
 
-	urlReq = urlReq + url.QueryEscape(base64.StdEncoding.EncodeToString(splitByte.Bytes()))
+	urlReq = urlReq + base64.URLEncoding.EncodeToString(splitByte.Bytes())
 
 	resp, err = http.Get(urlReq)
 	if err != nil {
