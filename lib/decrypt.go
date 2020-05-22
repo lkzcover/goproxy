@@ -8,7 +8,7 @@ import (
 
 func decryptURLData(data, key string) ([]byte, []byte, error) {
 
-	rawData, err := base64.StdEncoding.DecodeString(data)
+	rawData, err := base64.URLEncoding.DecodeString(data)
 	if err != nil {
 		return nil, nil, err
 	}
