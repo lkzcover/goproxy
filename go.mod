@@ -1,4 +1,4 @@
-module github.com/lkzcover/goproxy
+module github.com/lkzcover/goproxy/v2
 
 go 1.14
 

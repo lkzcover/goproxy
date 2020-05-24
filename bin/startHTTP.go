@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/lkzcover/goproxy/lib"
+	"github.com/lkzcover/goproxy/v2/lib"
 )
 
 func main() {
@@ -18,7 +18,9 @@ func main() {
 
 	log.Printf("Info: start listen port: %s", port)
 
-	var httpServer lib.HTTPServer
+	key := os.Getenv("KEY")
+
+	httpServer := lib.HTTPServer{Key: key}
 
 	_ = http.ListenAndServe(":"+port, &httpServer)
 

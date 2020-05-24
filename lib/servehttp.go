@@ -5,12 +5,12 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/lkzcover/easyaes"
 )
 
 type HTTPServer struct {
+	Key string
 }
 
 func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
@@ -38,8 +38,7 @@ func (obj *HTTPServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	if len(encryptModeReq) != 0 {
 		encryptMode = true
 
-		key = os.Getenv("KEY")
-		if len(key) == 0 {
+		if len(obj.Key) == 0 {
 			log.Println("Warning: KEY environment parameter not set")
 			resp.WriteHeader(http.StatusMethodNotAllowed)
 
